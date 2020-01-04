@@ -1,6 +1,7 @@
 const xray = require('x-ray')
 const S3 = require('aws-sdk/clients/s3');
-const s3 = new S3();
+const s3 = new S3({region: 'eu-central-1'});
+const find = require('lodash.find');
 
 
 const x = xray({  filters: {
@@ -16,24 +17,62 @@ const x = xray({  filters: {
   }
 })
 
-const stream = x('https://muusikoiden.net/tori/haku.php?keyword=mikseri&city=091&type=sell', 'table+script+table table[cellpadding="2"]', [
-  {
-    id:    '.bg2 .tori_title a@href | formatId',
-    link:  '.bg2 .tori_title a@href',
-    title: '.bg2 .tori_title a',
-    desc:  '.msg',
-    price: '.msg+p | formatPrice',
-    img:   'tr:nth-of-type(4) td[align="right"] img@src',
-    imgFull:   'tr:nth-of-type(4) td[align="right"] img@src | jpegFull',
-  }
-])
-  .paginate('table p td[align="right"] a[href*="/tori/haku.php?"]:last-of-type@href')
-  .limit(2)
-  .stream()
-  // .write('results.json')
+var params = {Bucket: 'pubgcase', Key: 'results.json'};
 
-var params = {ACL: 'private', Bucket: 'my-summer-bucket', Key: 'results.json', Body: stream};
+async function getFile(filename) {
+  const response = await s3.getObject(params, (err) => {
+    if (err) {
+      // handle errors
+    }
+  }).promise();
+  return response.Body.toString(); // your file as a string
+}
 
-s3.upload(params, function(err, data) {
-  console.log(err, data);
+getFile().then((fileStr)=> {
+  const oldData = JSON.parse(fileStr);
+
+  const stream = x('https://muusikoiden.net/tori/haku.php?keyword=mikseri&city=091&type=sell', 'table+script+table table[cellpadding="2"]', [
+    {
+      id:    '.bg2 .tori_title a@href | formatId',
+      link:  '.bg2 .tori_title a@href',
+      title: '.bg2 .tori_title a',
+      desc:  '.msg',
+      price: '.msg+p | formatPrice',
+      img:   'tr:nth-of-type(4) td[align="right"] img@src',
+      imgFull:   'tr:nth-of-type(4) td[align="right"] img@src | jpegFull',
+    }
+  ])
+    .paginate('table p td[align="right"] a[href*="/tori/haku.php?"]:last-of-type@href')
+    .limit(2)
+    .stream()
+    // .write('results.json')
+
+  const chunks = [];
+
+  stream.on("data", function (chunk) {
+    chunks.push(chunk);
+  });
+
+  stream.on("end", function () {
+    const body = Buffer.concat(chunks)
+    const newData = JSON.parse(Buffer.concat(chunks).toString());
+
+    newData.push(  {
+      "id": 123,
+      "link": "tst",
+      "title": "test SD-90",
+    });
+
+    const newItems = newData.filter((a) => {
+      return !find(oldData, (b) => { return a.id === b.id});
+    });
+
+    console.log(newItems);
+
+    params = {ACL: 'private', Bucket: 'pubgcase', Key: 'results.json', Body: body};
+
+    s3.upload(params, function(err, res) {
+      console.log(res);
+    });
+  });
 });
