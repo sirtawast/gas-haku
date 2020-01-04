@@ -9,6 +9,8 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "aws-sdk": "^2.597.0",
     "x-ray": "^2.3.4"
-  }
+  },
+  "dependencies": {}
 }
