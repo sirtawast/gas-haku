@@ -5,7 +5,7 @@ const find = require('lodash.find');
 
 
 const x = xray({  filters: {
-    jpegFull: function(value) {
+    formatImageFull: function(value) {
       return typeof value === 'string' && (value.indexOf('-q.jpg') > 0 || value.indexOf('-n.jpg') > 0) ? value.replace(/-[a-z]\.jpg/ig, '.jpg') : value;
     },
     formatPrice: function(value) {
@@ -39,7 +39,7 @@ getFile().then((fileStr)=> {
       desc:  '.msg',
       price: '.msg+p | formatPrice',
       img:   'tr:nth-of-type(4) td[align="right"] img@src',
-      imgFull:   'tr:nth-of-type(4) td[align="right"] img@src | jpegFull',
+      imgFull:   'tr:nth-of-type(4) td[align="right"] img@src | formatImageFull',
     }
   ])
     .paginate('table p td[align="right"] a[href*="/tori/haku.php?"]:last-of-type@href')
@@ -69,7 +69,7 @@ getFile().then((fileStr)=> {
 
     console.log(newItems);
 
-    params = {ACL: 'private', Bucket: 'pubgcase', Key: 'results.json', Body: body};
+    params = {ACL: 'private', Bucket: 'my-summer-bucket', Key: 'results.json', Body: body};
 
     s3.upload(params, function(err, res) {
       console.log(res);
