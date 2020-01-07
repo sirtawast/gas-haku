@@ -1,7 +1,9 @@
 const xray = require('x-ray')
 const S3 = require('aws-sdk/clients/s3');
-const s3 = new S3({region: 'eu-central-1'});
 const find = require('lodash.find');
+const env = require('dotenv').config()
+
+const s3 = new S3({region: process.env.AWS_S3_REGION});
 
 
 const x = xray({  filters: {
@@ -31,7 +33,7 @@ async function getFile(filename) {
 getFile().then((fileStr)=> {
   const oldData = JSON.parse(fileStr);
 
-  const stream = x('https://muusikoiden.net/tori/haku.php?keyword=mikseri&city=091&type=sell', 'table+script+table table[cellpadding="2"]', [
+  const stream = x('https://muusikoiden.net/tori/haku.php?keyword=mikseri&city=091&type=sell&with_image=1&sort=new', 'table+script+table table[cellpadding="2"]', [
     {
       id:    '.bg2 .tori_title a@href | formatId',
       link:  '.bg2 .tori_title a@href',
@@ -57,19 +59,13 @@ getFile().then((fileStr)=> {
     const body = Buffer.concat(chunks)
     const newData = JSON.parse(Buffer.concat(chunks).toString());
 
-    newData.push(  {
-      "id": 123,
-      "link": "tst",
-      "title": "test SD-90",
-    });
-
     const newItems = newData.filter((a) => {
       return !find(oldData, (b) => { return a.id === b.id});
     });
 
     console.log(newItems);
 
-    params = {ACL: 'private', Bucket: 'my-summer-bucket', Key: 'results.json', Body: body};
+    params = {ACL: 'private', Bucket: process.env.AWS_S3_BUCKET, Key: 'results.json', Body: body};
 
     s3.upload(params, function(err, res) {
       console.log(res);
