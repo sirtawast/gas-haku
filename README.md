@@ -5,7 +5,7 @@ gas-haku
 
 Never had time to finish this one. Maybe I'll continue some day.
 
-Elegant system for notifiying me when new Muusikoiden.net marketplace posts are made for stuff that interests me.
+Elegant system for notifiying me of interesting stuff when new [Muusikoiden.net](https://www.muusikoiden.net) marketplace posts are made.
 
 Note to future self; localhost POC still needs:
 
